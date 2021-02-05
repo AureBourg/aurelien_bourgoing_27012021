@@ -4,10 +4,7 @@ const fs = require('fs');
 
 //Route POST pour pouvoir ajouter une sauce à la base de donnée
 exports.createSauce = (req, res, next) => {
-    const sauceObject = JSON.parse(req.body.sauce); 
-    //Erreur car req.body.sauce serait "undefined", du coup on parse qqch de undefined donc erreur
-    //Pb avec bodyParser ???
-    //La req serait récupérée avant d'avoir pu etre parsée ???
+    const sauceObject = JSON.parse(req.body.sauce);
     delete sauceObject._id;
     const sauce = new Sauce({
       ...sauceObject,
@@ -25,12 +22,12 @@ exports.createSauce = (req, res, next) => {
 
 //Route PUT pour modifier une sauce et la renvoyer dans la base de donnée
 exports.modifySauce = (req, res, next) => {
-    const thingObject = req.file ?
+    const sauceObject = req.file ?
     {
-      ...JSON.parse(req.body.thing),
+      ...JSON.parse(req.body.sauce),
       imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     } : { ...req.body };
-    Sauce.updateOne({ _id: req.params.id }, { ...thingObject, _id: req.params.id })
+    Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
         .then(() => res.status(200).json({ message: 'Sauce modifiée !'}))
         .catch(error => res.status(400).json({ error }));
 };
@@ -66,19 +63,41 @@ exports.getAllSauces = (req, res, next) => {
     .catch(error => res.status(400).json({ error }));
 };
 
+//Route POST pour like/dislike une sauce
+exports.likeDislikeSauce = (req, res, next) => {
+  let like = req.body.like
 
-//Route POST pour pouvoir liker une sauce (inédite au projet)
-exports.likeSauce = (req, res, next) => {
-  const like = new Like({ //Creer un model Like
-    //...userId,
-    //like: -1 ou 0 ou 1
-
-    //if User.likes = -1 -> Sauce dislikée
-    //if User.likes = 0 -> Sauce neutre
-    //if User.likes = 1 -> Sauce likée
-
-  });
-  like.save()
-  .then(() => res.status(201).json({message: 'Sauce likée !'}))
-  .catch(error => res.status(400).json({ error }));
+    if (like === 1) {
+      Sauce.updateOne({ _id: req.params.id }, { $push: { usersLiked: req.body.userId }, 
+        $inc: { likes: +1 }, _id: req.params.id })
+        .then(() => res.status(200).json({ message: 'Vous avez liké la sauce !' }))
+        .catch((error) => res.status(400).json({ error }))
+    }
+  
+    if (like === -1) {
+      Sauce.updateOne({ _id: req.params.id }, { $push: { usersDisliked: req.body.userId },
+        $inc: { dislikes: +1 }, _id: req.params.id })
+        .then(() => res.status(200).json({ message: 'Vous avez disliké la sauce !' }))
+        .catch((error) => res.status(400).json({ error }))
+    }
+      
+    if (like === 0) {
+      Sauce.findOne({ _id: req.params.id })
+        .then((sauce) => {
+          if (sauce.usersLiked.includes(req.body.userId)) {
+            Sauce.updateOne({ _id: req.params.id }, { $pull: { usersLiked: req.body.userId },
+              $inc: { likes: -1 }, _id: req.params.id })
+              .then(() => res.status(200).json({ message: 'Vous ne likez plus la sauce !' }))
+              .catch((error) => res.status(400).json({ error }))
+          }
+  
+          if (sauce.usersDisliked.includes(req.body.userId)) {
+            Sauce.updateOne({ _id: req.params.id }, { $pull: { usersDisliked: req.body.userId },
+              $inc: { dislikes: -1 }, _id: req.params.id })
+              .then(() => res.status(200).json({ message: 'Vous ne dislikez plus la sauce !' }))
+              .catch((error) => res.status(400).json({ error }))
+          }
+        })
+        .catch((error) => res.status(404).json({ error }))
+    }
 }
