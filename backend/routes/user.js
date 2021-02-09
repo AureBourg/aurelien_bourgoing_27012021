@@ -8,10 +8,10 @@ const router = express.Router();
 const userCtrl = require('../controllers/user');
 
 // Ajout du format de mot de passe attendu
-const verifyPassword = require('../middleware/verifyPassword');
+const validatePassword = require('../middleware/validatePassword');
 
 // Création des différentes routes de l'API
-router.post('/signup', verifyPassword, userCtrl.signup);
+router.post('/signup', validatePassword, userCtrl.signup);
 router.post('/login', userCtrl.login);
 
 // Exportation du router
