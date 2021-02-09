@@ -4,15 +4,19 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const path = require('path');
 
+// Importation des modules de sécurité
+const helmet = require('helmet');
+const session = require('cookie-session')
+
 // Déclaration des routes
 const saucesRoutes = require('./routes/sauces');
 const userRoutes = require('./routes/user');
 
-// Création d'une application express
-const app = express();
+// Module qui permet de stocker des informations sensibles séparément du code
+require('dotenv').config();
 
 // Connection de l'app à MongoDB
-mongoose.connect('mongodb+srv://aurelien_bourgoing:flMsUPllDXyrWOnq@cluster0.r1rom.mongodb.net/test?retryWrites=true&w=majority',
+mongoose.connect(process.env.DB_URL,
   { useNewUrlParser: true,
     useUnifiedTopology: true })
   .then(() => console.log('Connexion à MongoDB réussie !'))
@@ -26,10 +30,29 @@ app.use((req, res, next) => {
     next();
   });
 
+// Création d'une application express
+const app = express();
+
+// Middleware qui permet de sécurisé l'utilisation des cookies
+const expiryDate = new Date( Date.now() + 60 * 60 * 1000 );
+app.use(session({
+  name: 'sessionId',
+  secret: process.env.SESS_SECRET,
+  cookie: {
+    secure: true,
+    httpOnly: true,
+    domain: 'http://localhost:3000',
+    expires: expiryDate
+  }
+}));
+
 // Middleware qui permet de parser les requêtes envoyées par le client, on peut y accéder grâce à req.body
 app.use(bodyParser.urlencoded({
   extended: true
 }));
+
+// Module qui permet de protéger l'application de certaines des vulnérabilités bien connues du Web en configurant de manière appropriée des en-têtes HTTP.
+app.use(helmet());
 
 // Utilisation de bodyParser pour transforme les données arrivant de la requête POST en objet JSON
 app.use(bodyParser.json());
