@@ -12,6 +12,9 @@ const session = require('cookie-session')
 const saucesRoutes = require('./routes/sauces');
 const userRoutes = require('./routes/user');
 
+// Création d'une application express
+const app = express();
+
 // Module qui permet de stocker des informations sensibles séparément du code
 require('dotenv').config();
 
@@ -29,9 +32,6 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     next();
   });
-
-// Création d'une application express
-const app = express();
 
 // Middleware qui permet de sécurisé l'utilisation des cookies
 const expiryDate = new Date( Date.now() + 60 * 60 * 1000 );

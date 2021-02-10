@@ -1,5 +1,5 @@
 // Importation des modules
-const https = require('https');
+const http = require('http');
 const app = require('./app');
 
 
@@ -45,7 +45,7 @@ const errorHandler = error => {
 };
 
 // Création du serveur avec express
-const server = https.createServer(app);
+const server = http.createServer(app);
 
 // Gestions des évenements serveur
 server.on('error', errorHandler);
